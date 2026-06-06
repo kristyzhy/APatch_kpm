@@ -3,6 +3,21 @@
 配合墓碑模块，当应用收到 `binder` 同步信息时，临时解冻被冻结的应用
 
 ## 更新记录
+### 8.0.0
+同步LKM<br />
+适配新的 `rekernel_cmd`<br />
+为网络解冻增加 uid 过滤
+### 7.6.0
+过滤更多网络包
+### 7.5.1
+更加严谨的处理netlink消息
+### 7.5.0
+增加netlink消息处理，支持通过消息移除/proc/rekernel
+### 7.0.1
+适配更多内核
+### 7.0.0
+PACKET_SIZE 从 128 增加到 256<br />
+异步 netlink_kmsg 新增 `rpc_name` 和 `code` 字段
 ### 6.0.14
 新增 netlink hello<br />
 ### 6.0.13

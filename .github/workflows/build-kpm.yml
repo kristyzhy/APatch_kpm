@@ -9,13 +9,13 @@ on:
   workflow_dispatch:
     inputs:
       release:
-        description: 'Push a new release'
+        description: "Push a new release"
         required: false
-        default: 'false'
+        default: "false"
       version:
-        description: 'release version'
+        description: "release version"
         required: false
-        default: '2024051900'
+        default: "2024051900"
 
 jobs:
   Build-on-Ubuntu:
@@ -25,11 +25,14 @@ jobs:
     env:
       TZ: UTC-8
 
+    outputs:
+      kpm_list: ${{ steps.list-kpms.outputs.kpm_list }}
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
-          submodules: 'recursive'
+          submodules: "recursive"
           fetch-depth: 1
 
       - name: Update system and install dependencies
@@ -42,28 +45,56 @@ jobs:
           mkdir target
 
           for dir in $(ls -d */ | grep -v '^KernelPatch/$\|^target/$'); do
-            make -C ${dir}
-            mv ${dir}*.kpm target
+            if [ ! -f ${dir}archive ]; then
+              make -C ${dir}
+              mv ${dir}*.kpm target
+            fi
           done
 
-      - name: Upload artifact
-        if: success()
-        uses: lzghzr/upload-artifact@405e6269d5b1feb22bf2a044deb7950596bed6da
+      - name: Generate kpm list
+        id: list-kpms
+        run: |
+          kpms=$(ls target/*.kpm | xargs -n1 basename | jq -R -s -c 'split("\n")[:-1]')
+          echo "kpm_list=${kpms}" >> "${GITHUB_OUTPUT}"
+
+      - name: Upload target for matrix jobs
+        uses: actions/upload-artifact@v7
         with:
-          path: "target/*.kpm"
-          artifact-per-file: true
-          artifact-name-rule: ${name}
+          name: all_kpms
+          path: target
 
       - name: Upload release
-        if: github.event.inputs.release == 'true' && success() && !cancelled()
-        uses: ncipollo/release-action@v1.14.0
+        if: github.event.inputs.release == 'true'
+        uses: ncipollo/release-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           name: ${{ github.event.inputs.version }}
           tag: ${{ github.event.inputs.version }}
-          body: This release is built by github-action.
           artifacts: "target/*.kpm"
           allowUpdates: true
+          generateReleaseNotes: true
           makeLatest: true
           omitBodyDuringUpdate: true
           replacesArtifacts: true
+
+  Upload-artifacts:
+    needs: Build-on-Ubuntu
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        kpm: ${{ fromJson(needs.Build-on-Ubuntu.outputs.kpm_list) }}
+
+    steps:
+      - name: Download target
+        uses: actions/download-artifact@v8
+        with:
+          name: all_kpms
+
+      - name: Upload ${{ matrix.kpm }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.kpm }}
+          path: ${{ matrix.kpm }}
+          archive: false

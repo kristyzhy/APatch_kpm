@@ -3,10 +3,10 @@
 
 #include <ktypes.h>
 
-#define THIS_MODULE ((struct module *)0)
+#define THIS_MODULE ((struct module*)0)
 
 #define ALIGN_MASK(x, mask) (((x) + (mask)) & ~(mask))
-#define ALIGN(x, a) ALIGN_MASK(x, (typeof(x))(a)-1)
+#define ALIGN(x, a) ALIGN_MASK(x, (typeof(x))(a) - 1)
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof(arr[0]))
 
@@ -64,12 +64,12 @@ struct binder_buffer {
   struct list_head entry;
   struct rb_node rb_node;
   unsigned free : 1;
-  unsigned clear_on_free : 1; // 6.1
+  unsigned clear_on_free : 1;  // 6.1
   unsigned allow_user_free : 1;
   unsigned async_transaction : 1;
-  unsigned oneway_spam_suspect : 1; // 6.1
+  unsigned oneway_spam_suspect : 1;  // 6.1
   // unsigned debug_id : 29;
-  unsigned debug_id : 27; // 6.1
+  unsigned debug_id : 27;  // 6.1
   struct binder_transaction* transaction;
   struct binder_node* target_node;
   size_t data_size;
@@ -84,7 +84,7 @@ struct binder_work {
   enum binder_work_type {
     BINDER_WORK_TRANSACTION = 1,
     BINDER_WORK_TRANSACTION_COMPLETE,
-    BINDER_WORK_TRANSACTION_ONEWAY_SPAM_SUSPECT, // 6.1
+    BINDER_WORK_TRANSACTION_ONEWAY_SPAM_SUSPECT,  // 6.1
     BINDER_WORK_RETURN_ERROR,
     BINDER_WORK_NODE,
     BINDER_WORK_DEAD_BINDER,
@@ -169,7 +169,7 @@ enum binder_stat_types {
 };
 struct binder_stats {
   // atomic_t br[18];
-  atomic_t br[20]; // 6.1
+  atomic_t br[20];  // 6.1
   atomic_t bc[19];
   atomic_t obj_created[BINDER_STAT_COUNT];
   atomic_t obj_deleted[BINDER_STAT_COUNT];
@@ -188,18 +188,18 @@ struct binder_thread {
 };
 
 // linux/netlink.h
-#define NETLINK_MAX_COOKIE_LEN	20
+#define NETLINK_MAX_COOKIE_LEN 20
 struct sk_buff;
 struct net;
 struct sock;
 struct netlink_kernel_cfg {
-  unsigned int	groups;
-  unsigned int	flags;
-  void		(*input)(struct sk_buff* skb);
+  unsigned int groups;
+  unsigned int flags;
+  void (*input)(struct sk_buff* skb);
   struct mutex* cb_mutex;
-  int		(*bind)(struct net* net, int group);
-  void		(*unbind)(struct net* net, int group);
-  bool		(*compare)(struct net* net, struct sock* sk);
+  int (*bind)(struct net* net, int group);
+  void (*unbind)(struct net* net, int group);
+  bool (*compare)(struct net* net, struct sock* sk);
 };
 struct netlink_ext_ack {
   const char* _msg;
@@ -221,7 +221,7 @@ struct nlmsghdr {
 #define NLMSG_ALIGN(len) (((len) + NLMSG_ALIGNTO - 1) & ~(NLMSG_ALIGNTO - 1))
 #define NLMSG_HDRLEN ((int)NLMSG_ALIGN(sizeof(struct nlmsghdr)))
 #define NLMSG_LENGTH(len) ((len) + NLMSG_HDRLEN)
-#define NLMSG_DATA(nlh)  ((void*)(((char*)nlh) + NLMSG_LENGTH(0)))
+#define NLMSG_DATA(nlh) ((void*)(((char*)nlh) + NLMSG_HDRLEN))
 
 // linux/gfp.h
 #define NUMA_NO_NODE (-1)
@@ -260,7 +260,30 @@ struct file_operations {
 struct siginfo;
 
 // linux/socket.h
+#define MSG_OOB 1
+#define MSG_PEEK 2
+#define MSG_DONTROUTE 4
+#define MSG_TRYHARD 4
+#define MSG_CTRUNC 8
+#define MSG_PROBE 0x10
+#define MSG_TRUNC 0x20
 #define MSG_DONTWAIT 0x40
+#define MSG_EOR 0x80
+#define MSG_WAITALL 0x100
+#define MSG_FIN 0x200
+#define MSG_SYN 0x400
+#define MSG_CONFIRM 0x800
+#define MSG_RST 0x1000
+#define MSG_ERRQUEUE 0x2000
+#define MSG_NOSIGNAL 0x4000
+#define MSG_MORE 0x8000
+#define MSG_WAITFORONE 0x10000
+#define MSG_SENDPAGE_NOPOLICY 0x10000
+#define MSG_SENDPAGE_NOTLAST 0x20000
+#define MSG_BATCH 0x40000
+#define MSG_EOF MSG_FIN
+#define MSG_NO_SHARED_FRAGS 0x80000
+#define MSG_SENDPAGE_DECRYPTED 0x100000
 
 // linux/tracepoint-defs.h
 struct tracepoint;
@@ -341,9 +364,7 @@ struct sock {
 #define sk_nulls_node __sk_common.skc_nulls_node
 #define sk_refcnt __sk_common.skc_refcnt
 #define sk_tx_queue_mapping __sk_common.skc_tx_queue_mapping
-#ifdef CONFIG_SOCK_RX_QUEUE_MAPPING
 #define sk_rx_queue_mapping __sk_common.skc_rx_queue_mapping
-#endif
 
 #define sk_dontcopy_begin __sk_common.skc_dontcopy_begin
 #define sk_dontcopy_end __sk_common.skc_dontcopy_end
@@ -406,5 +427,71 @@ struct sk_buff {
   };
   // unknow
 };
+
+// uapi/linux/tcp.h
+struct tcphdr {
+  __be16 source;
+  __be16 dest;
+  __be32 seq;
+  __be32 ack_seq;
+  __u16 res1 : 4, doff : 4, fin : 1, syn : 1, rst : 1, psh : 1, ack : 1, urg : 1, ece : 1, cwr : 1;
+  __be16 window;
+  __sum16 check;
+  __be16 urg_ptr;
+};
+
+// uapi/linux/ip.h
+struct iphdr {
+  __u8 ihl : 4, version : 4;
+  __u8 tos;
+  __be16 tot_len;
+  __be16 id;
+  __be16 frag_off;
+  __u8 ttl;
+  __u8 protocol;
+  __sum16 check;
+  __be32 saddr;
+  __be32 daddr;
+};
+
+// uapi/linux/ipv6.h
+struct ipv6hdr {
+  __u8 priority : 4, version : 4;
+  __u8 flow_lbl[3];
+
+  __be16 payload_len;
+  __u8 nexthdr;
+  __u8 hop_limit;
+
+  // unknow
+  // struct in6_addr saddr;
+  // struct in6_addr daddr;
+};
+
+// uapi/linux/swab.h
+#define ___constant_swab16(x) ((__u16)((((__u16)(x) & (__u16)0x00ffU) << 8) | (((__u16)(x) & (__u16)0xff00U) >> 8)))
+
+#define ___constant_swab32(x)                                                                     \
+  ((__u32)((((__u32)(x) & (__u32)0x000000ffUL) << 24) | (((__u32)(x) & (__u32)0x0000ff00UL) << 8) \
+           | (((__u32)(x) & (__u32)0x00ff0000UL) >> 8) | (((__u32)(x) & (__u32)0xff000000UL) >> 24)))
+
+#define ___constant_swab64(x)                                                                                         \
+  ((__u64)((((__u64)(x) & (__u64)0x00000000000000ffULL) << 56) | (((__u64)(x) & (__u64)0x000000000000ff00ULL) << 40)  \
+           | (((__u64)(x) & (__u64)0x0000000000ff0000ULL) << 24) | (((__u64)(x) & (__u64)0x00000000ff000000ULL) << 8) \
+           | (((__u64)(x) & (__u64)0x000000ff00000000ULL) >> 8) | (((__u64)(x) & (__u64)0x0000ff0000000000ULL) >> 24) \
+           | (((__u64)(x) & (__u64)0x00ff000000000000ULL) >> 40)                                                      \
+           | (((__u64)(x) & (__u64)0xff00000000000000ULL) >> 56)))
+
+#define ___constant_swahw32(x) \
+  ((__u32)((((__u32)(x) & (__u32)0x0000ffffUL) << 16) | (((__u32)(x) & (__u32)0xffff0000UL) >> 16)))
+
+#define ___constant_swahb32(x) \
+  ((__u32)((((__u32)(x) & (__u32)0x00ff00ffUL) << 8) | (((__u32)(x) & (__u32)0xff00ff00UL) >> 8)))
+
+#define swab16(x) ___constant_swab16(x)
+#define swab32(x) ___constant_swab32(x)
+#define swab64(x) ___constant_swab64(x)
+#define swahw32(x) ___constant_swahw32(x)
+#define swahb32(x) ___constant_swahb32(x)
 
 #endif /* __RE_KERNEL_H */
